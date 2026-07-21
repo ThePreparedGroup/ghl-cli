@@ -68,6 +68,17 @@ objectsCommand
   });
 
 objectsCommand
+  .command("record-update <schemaKey> <recordId>")
+  .description("Update a record")
+  .requiredOption("--data <json>", "Record data as JSON string")
+  .option("--json", "Output raw JSON")
+  .action(async (schemaKey, recordId, opts) => {
+    const recordData = JSON.parse(opts.data);
+    const data = await client().updateObjectRecord(schemaKey, recordId, recordData);
+    print(data.record ?? data, opts);
+  });
+
+objectsCommand
   .command("record-delete <schemaKey> <recordId>")
   .description("Delete a record")
   .action(async (schemaKey, recordId) => {

@@ -223,7 +223,7 @@ Unwired: `updateEmailTemplate` (`POST /emails/builder/data`).
 
 Almost entirely read-only; `coupon-create` is the one write in this group.
 
-### objects (6) — alias `obj`
+### objects (7) — alias `obj`
 
 | Command | Method → Endpoint | Version | Risk | Notes |
 |---|---|---|---|---|
@@ -232,6 +232,7 @@ Almost entirely read-only; `coupon-create` is the one write in this group.
 | `records <schemaKey>` | `POST /objects/:key/records/search` | 2021-07-28 | read | `POST` carries a search body only. |
 | `record-get <schemaKey> <recordId>` | `GET /objects/:key/records/:id` | 2021-07-28 | read | |
 | `record-create <schemaKey> --data <json>` | `POST /objects/:key/records` | 2021-07-28 | high_write | **See finding #8** — `--data` is arbitrary JSON merged into the body with no shape validation. |
+| `record-update <schemaKey> <recordId> --data <json>` | `PUT /objects/:key/records/:id` | 2021-07-28 | high_write | Same as finding #8 — `--data` is arbitrary JSON with no shape validation. Was documented in README but unwired until now. |
 | `record-delete <schemaKey> <recordId>` | `DELETE /objects/:key/records/:id` | 2021-07-28 | destructive | |
 
 Unwired client methods: `createObjectSchema`, `updateObjectSchema` — these define/change the custom object's schema itself, an account-wide structural change with a bigger blast radius than any single record. If ever exposed via CLI, treat as its own risk tier above `high_write`, not folded into "objects" generically.
@@ -256,8 +257,8 @@ Unwired client methods: `createObjectSchema`, `updateObjectSchema` — these def
 | surveys | 2 | 2 | 0 | 0 | 0 | 0 |
 | products | 10 | 5 | 1 | 3 | 1 | 0 |
 | payments | 8 | 7 | 0 | 1 | 0 | 0 |
-| objects | 6 | 4 | 0 | 1 | 1 | 0 |
-| **Total** | **92** | **52** | **5** | **23** | **11** | **2** |
+| objects | 7 | 4 | 0 | 2 | 1 | 0 |
+| **Total** | **93** | **52** | **5** | **24** | **11** | **2** |
 
 \* `invoices number` counted under `read` pending the Sprint 2 side-effect check in finding #4.
 

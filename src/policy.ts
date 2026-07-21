@@ -204,6 +204,7 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   "objects.records": read(),
   "objects.record-get": read(),
   "objects.record-create": highWrite(true, "--data is an arbitrary JSON blob with no shape validation. See docs/command-inventory.md finding #8."),
+  "objects.record-update": highWrite(true, "--data is an arbitrary JSON blob with no shape validation, same as record-create. See docs/command-inventory.md finding #8."),
   "objects.record-delete": destructive(true),
 };
 
