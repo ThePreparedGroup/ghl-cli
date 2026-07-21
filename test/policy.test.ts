@@ -49,7 +49,8 @@ test("contacts note/tasks resolve to their read or write branch by --add", () =>
 });
 
 test("every command from the Sprint 1 inventory (92 actions) is registered", () => {
-  // Guards against a future edit silently dropping an entry. 94 = 92 inventory
-  // actions + 2 local config actions that sit outside the GHL risk tiers.
-  assert.equal(Object.keys(POLICY_REGISTRY).length, 94);
+  // Guards against a future edit silently dropping an entry. 95 = 92 inventory
+  // actions + 3 local config actions (set/unset/show) that sit outside the
+  // GHL risk tiers — unset was added in Sprint 4.
+  assert.equal(Object.keys(POLICY_REGISTRY).length, 95);
 });

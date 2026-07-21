@@ -78,7 +78,8 @@ const local = (note?: string): OperationPolicy => ({
 
 export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   // ── config (local file only, never touches the GHL API) ──
-  "config.set": local("This is the plaintext-token path Sprint 4 replaces."),
+  "config.set": local("Token storage here is deprecated as of Sprint 4 — warns and points to GHL_PRIVATE_TOKEN."),
+  "config.unset": local("Added in Sprint 4 so users can remove a migrated plaintext token."),
   "config.show": local(),
 
   // ── contacts ──

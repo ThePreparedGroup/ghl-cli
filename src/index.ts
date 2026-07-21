@@ -19,6 +19,7 @@ import { emailsCommand } from "./commands/emails.js";
 import { objectsCommand } from "./commands/objects.js";
 import { estimatesCommand } from "./commands/estimates.js";
 import { PolicyViolationError, enforcePolicy, resolveOperationId } from "./policy.js";
+import { redactSecrets } from "./config.js";
 
 program
   .name("ghl")
@@ -74,9 +75,9 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
 
 program.parseAsync().catch((err) => {
   if (err.response?.data) {
-    console.error(JSON.stringify(err.response.data, null, 2));
+    console.error(redactSecrets(JSON.stringify(err.response.data, null, 2)));
   } else {
-    console.error(err.message || err);
+    console.error(redactSecrets(String(err.message || err)));
   }
   process.exit(1);
 });

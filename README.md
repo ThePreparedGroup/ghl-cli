@@ -21,19 +21,28 @@ npm link
 
 ## Setup
 
-### Option 1: Config file
-
-```bash
-ghl config set token <your-ghl-api-token>
-ghl config set location <your-location-id>
-ghl config show   # verify
-```
-
-### Option 2: Environment variables
+### Recommended: Environment variables
 
 ```bash
 export GHL_PRIVATE_TOKEN=your-token
 export GHL_LOCATION_ID=your-location-id
+```
+
+Or put them in a project-local `.env` file (never commit it).
+
+### Deprecated: Config file
+
+```bash
+ghl config set token <your-ghl-api-token>   # warns: stores the token in plaintext
+ghl config set location <your-location-id>
+ghl config show   # verify (token is always redacted in output)
+```
+
+This stores your token in plaintext at `~/.ghl/config.json` (file permissions are locked to `0600`, but plaintext-on-disk is still weaker than an environment variable). `GHL_PRIVATE_TOKEN` always takes precedence when both are set. If you've already set a token this way, migrate and clean up with:
+
+```bash
+export GHL_PRIVATE_TOKEN=your-token
+ghl config unset token
 ```
 
 ### Getting your credentials
@@ -358,9 +367,10 @@ ghl obj record-delete <schemaKey> <id>
 ### Config
 
 ```bash
-ghl config set token <value>                   # Set API token
+ghl config set token <value>                   # Set API token (deprecated — plaintext, prefer GHL_PRIVATE_TOKEN)
 ghl config set location <value>                # Set location ID
-ghl config show                                # Show current config
+ghl config unset token                         # Remove a plaintext token after migrating to the env var
+ghl config show                                # Show current config (token always redacted)
 ```
 
 ---
