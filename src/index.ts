@@ -18,6 +18,7 @@ import { mediaCommand } from "./commands/media.js";
 import { emailsCommand } from "./commands/emails.js";
 import { objectsCommand } from "./commands/objects.js";
 import { estimatesCommand } from "./commands/estimates.js";
+import { PolicyViolationError, enforcePolicy, resolveOperationId } from "./policy.js";
 
 program
   .name("ghl")
@@ -48,6 +49,28 @@ program.addCommand(mediaCommand);
 program.addCommand(emailsCommand);
 program.addCommand(objectsCommand);
 program.addCommand(estimatesCommand);
+
+// Sprint 3 (Epic 1.1): every command passes through the risk-policy registry
+// before its handler runs. An operation with no registry entry — or one
+// explicitly marked prohibited — is refused here, before any GHL API call
+// can happen. See src/policy.ts.
+program.hook("preAction", (_thisCommand, actionCommand) => {
+  const group = actionCommand.parent?.name() ?? actionCommand.name();
+  const operationId = resolveOperationId(
+    group,
+    actionCommand.name(),
+    actionCommand.opts(),
+  );
+  try {
+    enforcePolicy(operationId);
+  } catch (err) {
+    if (err instanceof PolicyViolationError) {
+      console.error(`Blocked by policy: ${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+});
 
 program.parseAsync().catch((err) => {
   if (err.response?.data) {
