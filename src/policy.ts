@@ -240,6 +240,14 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
 };
 
 /**
+ * Sprint 7 (Epic 1.2 part 2): every write requires an explicit --account;
+ * reads and local (config/account management) operations may use whatever
+ * default is configured.
+ */
+export const isWriteRisk = (risk: Risk): boolean =>
+  risk === "low_write" || risk === "high_write" || risk === "destructive";
+
+/**
  * Resolves the registry key for a command invocation. Almost always
  * "<group>.<command>", except the two contacts commands that branch into a
  * read or a write depending on whether --add was passed.

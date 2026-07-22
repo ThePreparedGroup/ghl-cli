@@ -19,13 +19,22 @@ import { mediaCommand } from "./commands/media.js";
 import { emailsCommand } from "./commands/emails.js";
 import { objectsCommand } from "./commands/objects.js";
 import { estimatesCommand } from "./commands/estimates.js";
-import { PolicyViolationError, enforcePolicy, resolveOperationId } from "./policy.js";
-import { redactSecrets } from "./config.js";
+import {
+  PolicyViolationError,
+  enforcePolicy,
+  isWriteRisk,
+  resolveOperationId,
+} from "./policy.js";
+import { getProfile, getProfileToken, redactSecrets } from "./config.js";
 
 program
   .name("ghl")
   .description("GoHighLevel CLI — CRM operations from the terminal")
-  .version("0.1.0");
+  .version("0.1.0")
+  .option(
+    "--account <alias>",
+    "Named account profile to use (required for writes; see `ghl account`)",
+  );
 
 // Show banner on `ghl` (no args) or `ghl --help`
 const args = process.argv.slice(2);
@@ -57,21 +66,48 @@ program.addCommand(estimatesCommand);
 // before its handler runs. An operation with no registry entry — or one
 // explicitly marked prohibited — is refused here, before any GHL API call
 // can happen. See src/policy.ts.
-program.hook("preAction", (_thisCommand, actionCommand) => {
+//
+// Sprint 7 (Epic 1.2 part 2): every write additionally requires an explicit
+// --account <alias>; reads may fall back to the configured default. When
+// --account is given, it's resolved here and pushed into process.env for
+// this invocation only — getToken()/getLocationId() in config.ts already
+// treat ambient env vars as the highest-priority source (Sprint 6), so this
+// is the only place that needs to know about the flag at all.
+program.hook("preAction", (thisCommand, actionCommand) => {
   const group = actionCommand.parent?.name() ?? actionCommand.name();
   const operationId = resolveOperationId(
     group,
     actionCommand.name(),
     actionCommand.opts(),
   );
+  let policy;
   try {
-    enforcePolicy(operationId);
+    policy = enforcePolicy(operationId);
   } catch (err) {
     if (err instanceof PolicyViolationError) {
       console.error(`Blocked by policy: ${err.message}`);
       process.exit(1);
     }
     throw err;
+  }
+
+  const accountAlias: string | undefined = thisCommand.opts().account;
+
+  if (isWriteRisk(policy.risk) && !accountAlias) {
+    console.error(
+      `Blocked by policy: "${operationId}" is a ${policy.risk} operation and requires an explicit account. ` +
+        "Pass --account <alias> before the command, e.g. `ghl --account demo " +
+        `${operationId.replace(".", " ")}\`. Run \`ghl account list\` to see configured accounts.`,
+    );
+    process.exit(1);
+  }
+
+  if (accountAlias) {
+    const profile = getProfile(accountAlias);
+    const token = getProfileToken(profile);
+    process.env.GHL_PRIVATE_TOKEN = token;
+    process.env.GHL_LOCATION_ID = profile.locationId;
+    console.error(`Using account "${accountAlias}": ${profile.name} (${profile.locationId})`);
   }
 });
 

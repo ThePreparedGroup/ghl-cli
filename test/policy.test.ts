@@ -4,11 +4,20 @@ import {
   POLICY_REGISTRY,
   PolicyViolationError,
   enforcePolicy,
+  isWriteRisk,
   resolveOperationId,
 } from "../src/policy.js";
 
 test("a registered read passes", () => {
   assert.doesNotThrow(() => enforcePolicy("contacts.list"));
+});
+
+test("isWriteRisk distinguishes writes from reads and local ops (Sprint 7 --account gate)", () => {
+  assert.ok(isWriteRisk("low_write"));
+  assert.ok(isWriteRisk("high_write"));
+  assert.ok(isWriteRisk("destructive"));
+  assert.ok(!isWriteRisk("read"));
+  assert.ok(!isWriteRisk("local"));
 });
 
 test("a deliberately-unregistered operation is blocked", () => {
