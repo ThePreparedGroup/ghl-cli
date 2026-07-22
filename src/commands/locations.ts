@@ -59,8 +59,20 @@ locationsCommand
 
 locationsCommand
   .command("tag-delete <tagId>")
-  .description("Delete a location tag")
-  .action(async (tagId) => {
+  .description(
+    "Delete a location tag (removes it from every contact location-wide — requires --confirm <tagId>)",
+  )
+  .requiredOption(
+    "--confirm <tagId>",
+    "Must exactly match <tagId>, to confirm this location-wide deletion",
+  )
+  .action(async (tagId, opts) => {
+    if (opts.confirm !== tagId) {
+      console.error(
+        `Refusing to delete tag "${tagId}": --confirm must exactly match the tag ID. Deleting a tag definition untags every contact that has it, location-wide.`,
+      );
+      process.exit(1);
+    }
     const data = await client().deleteLocationTag(getLocationId(), tagId);
     print(data, {});
   });

@@ -9,6 +9,11 @@ export const contactsCommand = new Command("contacts").description(
   "Manage contacts",
 );
 
+// Sprint 5 (Epic 1.5): contact deletion via the API is prohibited. This tag
+// is applied instead so a human can review and remove the contact through a
+// separate, deliberate process.
+const PENDING_DELETION_TAG = "pending-deletion";
+
 contactsCommand
   .command("list")
   .description("Search/list contacts")
@@ -77,10 +82,15 @@ contactsCommand
 
 contactsCommand
   .command("delete <id>")
-  .description("Delete a contact")
+  .description(
+    "Mark a contact for deletion (API deletion is prohibited — adds a tag instead; see docs/command-inventory.md)",
+  )
   .option("--json", "Output raw JSON")
   .action(async (id, opts) => {
-    const data = await client().deleteContact(id);
+    const data = await client().addContactTags(id, [PENDING_DELETION_TAG]);
+    console.error(
+      `Contact ${id} tagged "${PENDING_DELETION_TAG}". API deletion of contacts is prohibited by policy — actual removal is a separate, manually reviewed step.`,
+    );
     print(data, opts);
   });
 

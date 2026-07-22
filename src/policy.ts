@@ -87,7 +87,7 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   "contacts.get": read(),
   "contacts.create": highWrite(false, "No duplicate check yet — Epic 2.6."),
   "contacts.update": highWrite(true),
-  "contacts.delete": destructive(true, "Prohibited per Epic 1.5 once Sprint 5 lands; still functional today."),
+  "contacts.delete": highWrite(true, "Sprint 5: no longer calls DELETE /contacts/:id. Tags the contact pending-deletion instead — API deletion of contacts is prohibited; actual removal is a manual, reviewed step."),
   "contacts.tag": highWrite(true, "Automation-sensitive: tag apply/remove."),
   "contacts.note.add": lowWrite(true),
   "contacts.note.list": read(),
@@ -144,7 +144,7 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   "locations.search": read(),
   "locations.tags": read(),
   "locations.tag-create": lowWrite(false),
-  "locations.tag-delete": destructive(true, "Deletes the tag definition location-wide, not one contact's assignment. See docs/command-inventory.md finding #7."),
+  "locations.tag-delete": destructive(true, "Deletes the tag definition location-wide, not one contact's assignment. See docs/command-inventory.md finding #7. Sprint 5: gated behind a --confirm <tagId> match."),
   "locations.fields": read(),
   "locations.values": read(),
   "locations.templates": read(),
@@ -205,7 +205,31 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   "objects.record-get": read(),
   "objects.record-create": highWrite(true, "--data is an arbitrary JSON blob with no shape validation. See docs/command-inventory.md finding #8."),
   "objects.record-update": highWrite(true, "--data is an arbitrary JSON blob with no shape validation, same as record-create. See docs/command-inventory.md finding #8."),
-  "objects.record-delete": destructive(true),
+  "objects.record-delete": destructive(true, "Sprint 5: gated behind a --confirm <recordId> match."),
+
+  // ── Sprint 5 (Epic 1.5): structurally prohibited operations ──
+  // No CLI command exposes any of these today — the client.ts methods exist
+  // but are unwired (see docs/command-inventory.md finding #5). An
+  // unregistered operation already fails closed by default (Sprint 3), so
+  // these entries aren't load-bearing on their own; they exist so the intent
+  // is explicit and documented, rather than a silent gap that could look
+  // like an oversight to whoever adds the command later.
+  //
+  // The roadmap's Epic 1.5 also names "companies" as prohibited — this
+  // codebase has no company resource in client.ts at all, so there's
+  // nothing to register. Worth correcting in the roadmap doc.
+  "locations.delete": {
+    ...destructive(true, "Whole-location deletion — prohibited per Epic 1.5. No CLI command exists for this; entry is defensive."),
+    prohibited: true,
+  },
+  "locations.custom-field-delete": {
+    ...destructive(true, "Custom-field definitions: manual deletion in the GHL UI only, per Epic 1.5. No CLI command exists for this; entry is defensive."),
+    prohibited: true,
+  },
+  "social.bulk-delete": {
+    ...destructive(true, "Bulk deletion mechanically prohibited per Epic 1.5 until a dedicated, reviewed workflow exists. No CLI command exists for this; entry is defensive."),
+    prohibited: true,
+  },
 };
 
 /**

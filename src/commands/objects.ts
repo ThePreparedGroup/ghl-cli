@@ -80,8 +80,18 @@ objectsCommand
 
 objectsCommand
   .command("record-delete <schemaKey> <recordId>")
-  .description("Delete a record")
-  .action(async (schemaKey, recordId) => {
+  .description("Delete a record (requires --confirm <recordId>)")
+  .requiredOption(
+    "--confirm <recordId>",
+    "Must exactly match <recordId>, to confirm deletion",
+  )
+  .action(async (schemaKey, recordId, opts) => {
+    if (opts.confirm !== recordId) {
+      console.error(
+        `Refusing to delete record "${recordId}": --confirm must exactly match the record ID.`,
+      );
+      process.exit(1);
+    }
     const data = await client().deleteObjectRecord(schemaKey, recordId);
     print(data, {});
   });

@@ -53,6 +53,24 @@ test("every command from the Sprint 1 inventory (93 actions) is registered", () 
   // actions + 3 local config actions (set/unset/show) that sit outside the
   // GHL risk tiers — unset was added in Sprint 4. objects.record-update was
   // added after Sprint 1, wiring up a client method the README already
-  // documented but no command exposed.
-  assert.equal(Object.keys(POLICY_REGISTRY).length, 96);
+  // documented but no command exposed. Sprint 5 added 3 defensive prohibited
+  // entries (locations.delete, locations.custom-field-delete,
+  // social.bulk-delete) for capabilities with no CLI command yet.
+  assert.equal(Object.keys(POLICY_REGISTRY).length, 99);
+});
+
+test("contacts.delete is no longer destructive — Sprint 5 replaced it with tag-for-deletion", () => {
+  const policy = enforcePolicy("contacts.delete");
+  assert.equal(policy.risk, "high_write");
+  assert.notEqual(policy.prohibited, true);
+});
+
+test("Sprint 5 defensive entries for unwired capabilities are prohibited", () => {
+  for (const key of [
+    "locations.delete",
+    "locations.custom-field-delete",
+    "social.bulk-delete",
+  ]) {
+    assert.throws(() => enforcePolicy(key), PolicyViolationError);
+  }
 });
