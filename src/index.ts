@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { program } from "commander";
 import { showBanner } from "./banner.js";
+import { accountCommand } from "./commands/account.js";
 import { calendarCommand } from "./commands/calendar.js";
 import { configCommand } from "./commands/config-cmd.js";
 import { contactsCommand } from "./commands/contacts.js";
@@ -34,6 +35,7 @@ if (!hasSubcommand) {
 }
 
 program.addCommand(configCommand);
+program.addCommand(accountCommand);
 program.addCommand(contactsCommand);
 program.addCommand(opportunitiesCommand);
 program.addCommand(conversationsCommand);

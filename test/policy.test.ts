@@ -55,8 +55,9 @@ test("every command from the Sprint 1 inventory (93 actions) is registered", () 
   // added after Sprint 1, wiring up a client method the README already
   // documented but no command exposed. Sprint 5 added 3 defensive prohibited
   // entries (locations.delete, locations.custom-field-delete,
-  // social.bulk-delete) for capabilities with no CLI command yet.
-  assert.equal(Object.keys(POLICY_REGISTRY).length, 99);
+  // social.bulk-delete) for capabilities with no CLI command yet. Sprint 6
+  // added the 5 `account` commands (named profiles).
+  assert.equal(Object.keys(POLICY_REGISTRY).length, 104);
 });
 
 test("contacts.delete is no longer destructive — Sprint 5 replaced it with tag-for-deletion", () => {

@@ -28,6 +28,29 @@ export class GhlClient {
     return { headers: { Version: CONVERSATIONS_VERSION } };
   }
 
+  /**
+   * Sprint 6 (Epic 1.2): confirms this token can reach the location it's
+   * configured for, and flags if it can also reach an agency-only endpoint —
+   * which would mean it isn't scoped to just this one location and could
+   * potentially write to others. Per the Sprint 2 live probe, a properly
+   * location-scoped token gets a 403 on /locations/search; if that ever
+   * succeeds instead, the token is broader than intended.
+   */
+  checkScope = async (): Promise<{
+    canAccessConfiguredLocation: boolean;
+    looksAgencyScoped: boolean;
+  }> => {
+    const canAccessConfiguredLocation = await this.http
+      .get(`/locations/${this.locationId}`)
+      .then(() => true)
+      .catch(() => false);
+    const looksAgencyScoped = await this.http
+      .get("/locations/search", { params: { limit: 1 } })
+      .then(() => true)
+      .catch(() => false);
+    return { canAccessConfiguredLocation, looksAgencyScoped };
+  };
+
   // ── Contacts ──────────────────────────────────────────
 
   searchContacts = (params: Record<string, string | number> = {}) =>

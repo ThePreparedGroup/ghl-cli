@@ -82,6 +82,13 @@ export const POLICY_REGISTRY: Record<string, OperationPolicy> = {
   "config.unset": local("Added in Sprint 4 so users can remove a migrated plaintext token."),
   "config.show": local(),
 
+  // ── account (Sprint 6, Epic 1.2 part 1: named profiles) ──
+  "account.add": local("Stores only a tokenEnv name, never a token — upsertAccountProfile refuses literal tokens."),
+  "account.remove": local(),
+  "account.list": local(),
+  "account.set-default": local(),
+  "account.verify": read("Makes live GET calls to confirm scope, but doesn't write anything."),
+
   // ── contacts ──
   "contacts.list": read(),
   "contacts.get": read(),

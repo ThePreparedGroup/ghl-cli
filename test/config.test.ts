@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { redactSecrets, redactToken } from "../src/config.js";
+import {
+  getLocationId,
+  getToken,
+  looksLikeEnvVarName,
+  redactSecrets,
+  redactToken,
+} from "../src/config.js";
 
 // Deliberately does not touch ~/.ghl/config.json — that path is real user
-// state, not a test fixture. The file-perms and legacy-plaintext-warning
-// behavior in config.ts were verified live instead (see Sprint 4 commit).
+// state, not a test fixture. The file-perms, legacy-plaintext-warning, and
+// named-profile-resolution behavior in config.ts were verified live instead
+// (see the Sprint 4 and Sprint 6 commits).
 
 test("redactToken never returns the full secret", () => {
   const token = "pit-82a78764-58e6-40f2-8a01-4fd9c21fdd88";
@@ -29,5 +36,29 @@ test("redactSecrets strips a token sourced from the environment", () => {
   } finally {
     if (original === undefined) delete process.env.GHL_PRIVATE_TOKEN;
     else process.env.GHL_PRIVATE_TOKEN = original;
+  }
+});
+
+test("looksLikeEnvVarName accepts real env var names, rejects pasted tokens", () => {
+  assert.ok(looksLikeEnvVarName("GHL_TOKEN_DEMO"));
+  assert.ok(looksLikeEnvVarName("GHL_PRIVATE_TOKEN"));
+  assert.ok(!looksLikeEnvVarName("pit-82a78764-58e6-40f2-8a01-4fd9c21fdd88"));
+  assert.ok(!looksLikeEnvVarName("ghl_token_demo"));
+  assert.ok(!looksLikeEnvVarName(""));
+});
+
+test("a full ambient env pair resolves without touching disk", () => {
+  const savedToken = process.env.GHL_PRIVATE_TOKEN;
+  const savedLocation = process.env.GHL_LOCATION_ID;
+  process.env.GHL_PRIVATE_TOKEN = "pit-ambient-test-token";
+  process.env.GHL_LOCATION_ID = "ambient-test-location";
+  try {
+    assert.equal(getToken(), "pit-ambient-test-token");
+    assert.equal(getLocationId(), "ambient-test-location");
+  } finally {
+    if (savedToken === undefined) delete process.env.GHL_PRIVATE_TOKEN;
+    else process.env.GHL_PRIVATE_TOKEN = savedToken;
+    if (savedLocation === undefined) delete process.env.GHL_LOCATION_ID;
+    else process.env.GHL_LOCATION_ID = savedLocation;
   }
 });
