@@ -2,7 +2,12 @@ import { Command } from "commander";
 import { GhlClient } from "../client.js";
 import { getLocationId, getToken } from "../config.js";
 import { print } from "../output.js";
-import { formatResolvedContact, resolveContact } from "../resolvers.js";
+import {
+  diffContactUpdate,
+  formatFieldDiff,
+  formatResolvedContact,
+  resolveContact,
+} from "../resolvers.js";
 
 const client = () => new GhlClient(getToken(), getLocationId());
 
@@ -71,8 +76,24 @@ contactsCommand
   .option("--tags <tags>", "Comma-separated tags")
   .option("--json", "Output raw JSON")
   .action(async (contact, opts) => {
+    if (!opts.email && !opts.firstName && !opts.lastName && !opts.phone && !opts.tags) {
+      console.error(
+        "Refusing to send an empty update: pass at least one of --email, --firstName, --lastName, --phone, --tags.",
+      );
+      process.exit(1);
+    }
+
     const resolved = await resolveContact(client(), contact);
     console.error(`Target: ${formatResolvedContact(resolved)}`);
+
+    const diffs = diffContactUpdate(resolved.raw, opts);
+    if (diffs.length === 0) {
+      console.error("No changes: every field passed already matches the current value.");
+      process.exit(0);
+    }
+    console.error("Fields changing:");
+    for (const diff of diffs) console.error(formatFieldDiff(diff));
+
     const body: Record<string, unknown> = {};
     if (opts.email) body.email = opts.email;
     if (opts.firstName) body.firstName = opts.firstName;
