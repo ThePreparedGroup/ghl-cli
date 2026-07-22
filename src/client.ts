@@ -4,6 +4,37 @@ const BASE_URL = "https://services.leadconnectorhq.com";
 const DEFAULT_VERSION = "2021-07-28";
 const CONVERSATIONS_VERSION = "2021-04-15";
 
+/**
+ * Sprint 8 (Epic 1.3, part 1): thrown by the request interceptor below
+ * instead of sending a write, when dry-run mode is active. Carries just
+ * enough to describe the request that would have gone out. This is
+ * deliberately NOT an error — index.ts's top-level catch treats it as a
+ * successful preview and exits 0.
+ *
+ * Scope note: this shows the exact request that would be sent — method,
+ * endpoint, params, body. It does not show current-vs-proposed state,
+ * automation-impact warnings, or the verification that would run
+ * afterward — those need identity resolution and a diff engine (Milestone
+ * 2), which don't exist yet. Full Epic 1.3 is later sprints; this is the
+ * mechanism those will build on.
+ */
+export class DryRunHalt extends Error {
+  method: string;
+  url: string;
+  params?: unknown;
+  data?: unknown;
+
+  constructor(config: { method?: string; url?: string; baseURL?: string; params?: unknown; data?: unknown }) {
+    const fullUrl = `${config.baseURL ?? ""}${config.url ?? ""}`;
+    super(`DRY RUN: would send ${(config.method ?? "").toUpperCase()} ${fullUrl}`);
+    this.name = "DryRunHalt";
+    this.method = (config.method ?? "").toUpperCase();
+    this.url = fullUrl;
+    this.params = config.params;
+    this.data = config.data;
+  }
+}
+
 export class GhlClient {
   private http: AxiosInstance;
   private locationId: string;
@@ -17,6 +48,23 @@ export class GhlClient {
         "Content-Type": "application/json",
         Version: DEFAULT_VERSION,
       },
+    });
+
+    // GHL_DRY_RUN is set by index.ts's preAction hook, and only when the
+    // resolved operation for THIS invocation is itself a write — so it's
+    // safe to halt unconditionally here rather than re-checking the HTTP
+    // method (some read commands use POST to carry a search body).
+    this.http.interceptors.request.use((config) => {
+      if (process.env.GHL_DRY_RUN === "1") {
+        throw new DryRunHalt({
+          method: config.method,
+          url: config.url,
+          baseURL: config.baseURL,
+          params: config.params,
+          data: config.data,
+        });
+      }
+      return config;
     });
   }
 

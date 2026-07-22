@@ -26,6 +26,7 @@ import {
   resolveOperationId,
 } from "./policy.js";
 import { getProfile, getProfileToken, redactSecrets } from "./config.js";
+import { DryRunHalt } from "./client.js";
 
 program
   .name("ghl")
@@ -34,6 +35,10 @@ program
   .option(
     "--account <alias>",
     "Named account profile to use (required for writes; see `ghl account`)",
+  )
+  .option(
+    "--dry-run",
+    "Preview the request a write would send, without sending it (writes only)",
   );
 
 // Show banner on `ghl` (no args) or `ghl --help`
@@ -109,9 +114,32 @@ program.hook("preAction", (thisCommand, actionCommand) => {
     process.env.GHL_LOCATION_ID = profile.locationId;
     console.error(`Using account "${accountAlias}": ${profile.name} (${profile.locationId})`);
   }
+
+  // Sprint 8 (Epic 1.3, part 1): --dry-run only takes effect for writes.
+  // GhlClient's request interceptor checks this env var and halts before
+  // sending, regardless of which of the 17 command files made the call.
+  if (isWriteRisk(policy.risk) && thisCommand.opts().dryRun) {
+    process.env.GHL_DRY_RUN = "1";
+  }
 });
 
 program.parseAsync().catch((err) => {
+  if (err instanceof DryRunHalt) {
+    console.log("=== DRY RUN — no request was sent ===");
+    console.log(`${err.method} ${redactSecrets(err.url)}`);
+    if (err.params && Object.keys(err.params as object).length > 0) {
+      console.log("Query params:", redactSecrets(JSON.stringify(err.params, null, 2)));
+    }
+    if (err.data) {
+      console.log("Body:", redactSecrets(JSON.stringify(err.data, null, 2)));
+    }
+    console.log(
+      "\nNote: this shows the exact request that would be sent. It does not yet show " +
+        "current-vs-proposed state, automation-impact warnings, or the verification that " +
+        "would run afterward — those need identity resolution and a diff engine (Milestone 2).",
+    );
+    process.exit(0);
+  }
   if (err.response?.data) {
     console.error(redactSecrets(JSON.stringify(err.response.data, null, 2)));
   } else {
